@@ -65,7 +65,7 @@ optional arguments:
 
     $ spot-persist < data.json
 
-**Cron job to download data and update the DB every 15 minutes **
+**Cron job to download data and update the DB every 15 minutes**
 
     */5 * * * * spot-fetch 0ATnNuieqRyM7RYsOFdaHoTNOtoFy9Xq4 | spot-persist -u -n /some/dir/messages.db
 
