@@ -45,14 +45,17 @@ def parse(handle):
     messages = data['response']['feedMessageResponse']['messages']['message']
     return metadata, messages
 
-def populate(session, metadata, messages):
+def populate(session, metadata, messages, update = False):
 
     for m in messages:
         message = model.Message()
         for k in m.keys():
             if hasattr(message, k):
                 setattr(message, k, m[k])
-        session.add(message)
+        if update:
+            session.merge(message)
+        else:
+            session.add(message)
 
     session.flush()
     session.commit()
@@ -61,12 +64,13 @@ def _main():
     parser = argparse.ArgumentParser(description="Utility for parsing SPOT feeds in JSON format and saving them to a SQL database")
     parser.add_argument('file', nargs='?', help='The json data to parse', type=argparse.FileType('r'), default=sys.stdin)
     parser.add_argument('-n', '--database-name', help="The filename of the SQLite database (default: messages.db)", default='messages.db')
+    parser.add_argument('-u', '--update', action='store_true', help="Insert new messages and update existing ones")
     args = parser.parse_args()
 
     metadata, messages = parse(args.file)
     print "Parsing %s messages from feed %s (device: %s, id: %s)" % (len(messages), metadata['name'], metadata['name'], metadata['id'])
     session = init_db(args.database_name)
-    populate(session, metadata, messages)
+    populate(session, metadata, messages, args.update)
 
     # for m in msg_q:
     #     print m.latitude, m.longitude
