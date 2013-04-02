@@ -19,46 +19,12 @@ Parse SPOT data feeds in JSON format and save them to a SQL database
 
 Usage: spot-persist.py -h
 """
-import argparse, getpass
-import json
+import argparse
 import sys
-from sqlalchemy import orm
-from sqlalchemy import create_engine
 
 from spotpersist import model
-
-def init_db(file):
-# Create an engine and create all the tables we need
-    engine = create_engine('sqlite:///%s' % (file), echo=True)
-    model.metadata.bind = engine
-    model.metadata.create_all()
-
-# Set up the session
-    sm = orm.sessionmaker(bind=engine, autoflush=True, autocommit=False,
-        expire_on_commit=True)
-    return orm.scoped_session(sm)
-
-def parse(handle):
-
-    data = json.load(handle)
-    metadata = data['response']['feedMessageResponse']['feed']
-    messages = data['response']['feedMessageResponse']['messages']['message']
-    return metadata, messages
-
-def populate(session, metadata, messages, update = False):
-
-    for m in messages:
-        message = model.Message()
-        for k in m.keys():
-            if hasattr(message, k):
-                setattr(message, k, m[k])
-        if update:
-            session.merge(message)
-        else:
-            session.add(message)
-
-    session.flush()
-    session.commit()
+from spotpersist import parse_json
+from spotpersist import sql
 
 def _main():
     parser = argparse.ArgumentParser(description="Utility for parsing SPOT feeds in JSON format and saving them to a SQL database")
@@ -67,16 +33,11 @@ def _main():
     parser.add_argument('-u', '--update', action='store_true', help="Insert new messages and update existing ones")
     args = parser.parse_args()
 
-    metadata, messages = parse(args.file)
+    metadata, messages = parse_json(args.file)
     print "Parsing %s messages from feed %s (device: %s, id: %s)" % (len(messages), metadata['name'], metadata['name'], metadata['id'])
-    session = init_db(args.database_name)
-    populate(session, metadata, messages, args.update)
 
-    # for m in msg_q:
-    #     print m.latitude, m.longitude
-
-
-    # msg_q = session.query(model.Message)
+    sql.init_db('sqlite:///%s' % (args.database_name))
+    sql.populate(messages, args.update)
 
 if __name__ == '__main__':
     _main()

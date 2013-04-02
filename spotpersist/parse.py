@@ -11,5 +11,4 @@ def parse_json(handle):
     messages = data['response']['feedMessageResponse']['messages']['message']
     return metadata, messages
 
-def parse_xml(handle):
-    raise Exception("parse_xml is not yet implemented")
+
