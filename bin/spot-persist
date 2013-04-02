@@ -25,7 +25,7 @@ import sys
 from sqlalchemy import orm
 from sqlalchemy import create_engine
 
-import model
+from spotpersist import model
 
 def init_db(file):
 # Create an engine and create all the tables we need

@@ -14,8 +14,8 @@ There are two utilites in this package:
 ### spot-fetch
 
 ```
-$ ./spot-fetch.py -h
-usage: spot-fetch.py [-h] [-t {message,latest}] [-f {json,xml}] [-p]
+$ spot-fetch -h
+usage: spot-fetch [-h] [-t {message,latest}] [-f {json,xml}] [-p]
                      [-P NO_PROMPT_PASSWORD]
                      glid
 
@@ -38,8 +38,8 @@ optional arguments:
 
 ### spot-persist
 ```
-$ ./spot-persist.py -h
-usage: spot-persist.py [-h] [-n DATABASE_NAME] [-u] [file]
+$ spot-persist -h
+usage: spot-persist [-h] [-n DATABASE_NAME] [-u] [file]
 
 Utility for parsing SPOT feeds in JSON format and saving them to a SQL
 database
@@ -59,11 +59,15 @@ optional arguments:
 
 **Download JSON data from a feed**
 
-    $ ./spot-fetch.py 0ATnNuieqRyM7RYsOFdaHoTNOtoFy9Xq4 > data.json
+    $ spot-fetch 0ATnNuieqRyM7RYsOFdaHoTNOtoFy9Xq4 > data.json
 
 **Save this data to a SQLite database**
 
-    $ ./spot-persist.py < data.json
+    $ spot-persist < data.json
+
+**Cron job to download data and update the DB every 15 minutes **
+
+    */5 * * * * spot-fetch 0ATnNuieqRyM7RYsOFdaHoTNOtoFy9Xq4 | spot-persist -u -n /some/dir/messages.db
 
 ## License
 
