@@ -6,7 +6,7 @@ setup(
     author='Casey Link',
     author_email='unnamedrambler@gmail.com',
     packages=['spotpersist'],
-    scripts=['bin/spot-persist','bin/spot-fetch'],
+    scripts=['bin/spot-persist','bin/spot-fetch', 'bin/spot-cartodb-sync'],
     url='a url',
     license='LICENSE',
     description='Tools for fetching and working with data from SPOT GPS Messengers',

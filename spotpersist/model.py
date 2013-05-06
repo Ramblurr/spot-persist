@@ -1,27 +1,37 @@
-from sqlalchemy import orm
-import datetime
 from sqlalchemy import schema, types
+from sqlalchemy.ext.declarative import declarative_base
 
+Base = declarative_base()
 metadata = schema.MetaData()
 
-message_table = schema.Table('message', metadata,
-                             schema.Column('id', types.Integer,
-                                            schema.Sequence('message_seq_id', optional=True),
-                                            primary_key=True),
-                            schema.Column('messengerId', types.Text(), nullable=False),
-                            schema.Column('messengerName', types.Text(), nullable=False),
-                            schema.Column('unixTime', types.Integer(), nullable=False),
-                            schema.Column('messageType', types.Text(), nullable=False),
-                            schema.Column('latitude', types.Float(), nullable=False),
-                            schema.Column('longitude', types.Float(), nullable=False),
-                            schema.Column('showCustomMsg', types.Text(), nullable=False),
-                            schema.Column('dateTime', types.Text(), nullable=False),
-                            schema.Column('altitude', types.Text(), nullable=False),
-                            schema.Column('hidden', types.Text(), nullable=False),
-                            schema.Column('messageContent', types.Text(), nullable=True),
-)
+CHECKIN = "CHECKIN"
+CUSTOM = "CUSTOM"
+TRACK = "TRACK"
 
-class Message(object):
-    pass
+class Message(Base):
+    __tablename__ = "messages"
+    id = schema.Column(types.Integer, primary_key=True)
+    messengerId = schema.Column(types.Text(), nullable=False)
+    latitude = schema.Column(types.Float(), nullable=False)
+    longitude = schema.Column(types.Float(), nullable=False)
+    dateTime = schema.Column(types.Text(), nullable=False)
+    unixTime = schema.Column(types.Integer(), nullable=False)
+    altitude = schema.Column(types.Text(), nullable=True)
+    messengerName = schema.Column(types.Text(), nullable=False)
+    messageType = schema.Column(types.Text(), nullable=False)
+    showCustomMsg = schema.Column(types.Text(), nullable=False)
+    hidden = schema.Column(types.Text(), nullable=False)
+    messageContent = schema.Column(types.Text(), nullable=True)
 
-orm.mapper(Message, message_table)
+    def simple(self):
+        return ( self.longitude, self.latitude )
+
+    def __repr__(self):
+        return '<Point %s,%s:%s>' %(self.latitude, self.longitude, self.messageType)
+
+
+class CartoDbSyncEntry(Base):
+    __tablename__ = "cartodb_log"
+    id = schema.Column(types.Integer, primary_key=True)
+    point_id = schema.Column(types.Integer, schema.ForeignKey('messages.id'))
+    timestamp = schema.Column(types.DateTime)

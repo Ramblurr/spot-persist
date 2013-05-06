@@ -12,6 +12,7 @@ def init_db(db_url):
     engine = create_engine(db_url, echo=debug)
     model.metadata.bind = engine
     model.metadata.create_all()
+    model.Base.metadata.create_all(engine)
 
     # Set up the session
     sm = orm.sessionmaker(bind=engine, autoflush=True, autocommit=False,

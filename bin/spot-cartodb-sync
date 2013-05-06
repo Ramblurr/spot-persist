@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2013 Casey Link <unnamedrambler@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Sync a spot feed to a cartodb table
+
+Usage: spot-cartodb sync -h
+"""
+import datetime
+import argparse
+import sys
+
+from sqlalchemy import asc
+
+from spotpersist import parse_json
+from spotpersist.cartodbutils import CartoTransaction
+from spotpersist import sql
+from spotpersist import model
+from spotpersist.model import Message, CartoDbSyncEntry
+from cartodb import CartoDBException
+
+class CartoSyncJob(object):
+    now = datetime.datetime.now()
+
+    def __init__(self, key, domain, table):
+        self.key = key
+        self.domain = domain
+        self.table = table
+
+    def debug(self, msg, e = None):
+        if e:
+            print msg + ": "
+            print e
+        else:
+            print msg
+
+
+    def mark_synced(self, point):
+        entry = CartoDbSyncEntry()
+        entry.point_id = point.id
+        entry.timestamp = self.now
+        sql.session.add(entry)
+
+    def new_points(self):
+        # get list of un-synced points
+        synced = sql.session.query(CartoDbSyncEntry).all()
+        synced_ids = [ p.point_id for p in synced ]
+        all_points = sql.session.query(Message).filter(~Message.id.in_(synced_ids)).all()
+        checkins = filter(lambda p: p.messageType in (model.CUSTOM, model.CHECKIN), all_points)
+        tracks = filter(lambda p: p.messageType == model.TRACK, all_points)
+        return checkins, tracks
+
+    def prepare_carto(self, checkins, tracks):
+        carto_trans = CartoTransaction(self.key, self.domain, self.table, debug=True)
+
+        for p in checkins:
+            carto_trans.insert_point(p)
+            self.mark_synced(p)
+
+        # process collected track points into a line
+        tracks = sql.session.query(Message).filter(Message.messageType == model.TRACK).order_by(asc(Message.dateTime)).all()
+        coords = [ p.simple() for p in tracks ]
+        carto_trans.update_line("journey", coords, remove_first=True)
+
+        return carto_trans
+
+    def run(self):
+        checkins, tracks = self.new_points()
+        if len(checkins) == 0 and len(tracks) == 0:
+            self.debug("Found 0 new points.")
+            return
+        else:
+            self.debug("Found %s unsynced points, syncing..." % (len(tracks)+len(checkins)))
+        carto_trans = self.prepare_carto(checkins, tracks)
+
+        try:
+            carto_trans.commit()
+            sql.session.commit()
+        except Exception, e:
+            self.debug("Error: carto commit failed", e)
+            sql.session.rollback()
+
+def _main():
+    parser = argparse.ArgumentParser(description="Utility for syncing SPOT feeds to cartodb")
+    parser.add_argument('-n', '--database-name', help="The filename of the SQLite database (default: messages.db)", default='messages.db')
+    parser.add_argument('-k', '--carto-key', help="cartodb API key")
+    parser.add_argument('-d', '--carto-domain', help="cartodb Domain")
+    parser.add_argument('-t', '--carto-table', help="cartodb table name")
+    args = parser.parse_args()
+
+    sql.init_db('sqlite:///%s' % (args.database_name))
+    job = CartoSyncJob(args.carto_key, args.carto_domain, args.carto_table)
+    job.run()
+
+
+if __name__ == '__main__':
+    _main()
