@@ -28,16 +28,26 @@ from spotpersist import sql
 
 def _main():
     parser = argparse.ArgumentParser(description="Utility for parsing SPOT feeds in JSON format and saving them to a SQL database")
-    parser.add_argument('file', nargs='?', help='The json data to parse', type=argparse.FileType('r'), default=sys.stdin)
+    parser.add_argument('file', nargs='+', help='The json data to parse', type=argparse.FileType('r'), default=sys.stdin)
     parser.add_argument('-n', '--database-name', help="The filename of the SQLite database (default: messages.db)", default='messages.db')
     parser.add_argument('-u', '--update', action='store_true', help="Insert new messages and update existing ones")
     args = parser.parse_args()
 
-    metadata, messages = parse_json(args.file)
-    print "Parsing %s messages from feed %s (device: %s, id: %s)" % (len(messages), metadata['name'], metadata['name'], metadata['id'])
+    all_msgs = []
+    for f in args.file:
+        try:
+            metadata, messages = parse_json(f)
+            for m in messages:
+                if type(m) is dict:
+                    all_msgs.append(m)
+            print "%s: Parsing %s messages from feed %s (device: %s, id: %s)" % (f.name, len(messages), metadata['name'], metadata['name'], metadata['id'])
+        except TypeError, e:
+            print "%s did not contain any messages" % (f.name)
+            print e
 
     sql.init_db('sqlite:///%s' % (args.database_name))
-    sql.populate(messages, args.update)
+    all_msgs = {v['dateTime']:v for v in all_msgs}.values()
+    sql.populate(all_msgs, args.update)
 
 if __name__ == '__main__':
     _main()

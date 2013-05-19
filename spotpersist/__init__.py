@@ -7,9 +7,12 @@ def parse_json(handle):
     Returns metadata dictionary and list of message dicts
     """
     data = json.load(handle)
-    metadata = data['response']['feedMessageResponse']['feed']
-    messages = data['response']['feedMessageResponse']['messages']['message']
-    return metadata, messages
+    try:
+        metadata = data['response']['feedMessageResponse']['feed']
+        messages = data['response']['feedMessageResponse']['messages']['message']
+        return metadata, messages
+    except KeyError:
+        return None
 
 def parse_xml(handle):
     raise Exception("parse_xml is not yet implemented")
