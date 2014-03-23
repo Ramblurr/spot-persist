@@ -39,6 +39,7 @@ def fetch_data(glid, type = TYPE_ALL, format = FORMAT_JSON, password = None):
     conn = urllib2.urlopen(url)
     data = conn .read()
     conn.close()
+
     return data
 
 def _main():
@@ -48,6 +49,7 @@ def _main():
     parser.add_argument('-f', '--format', choices=['json', 'xml'], help="The desired output format (default: json)", default='json')
     parser.add_argument('-p', '--password', action='store_true', help="Prompts for the feed's password interactively")
     parser.add_argument('-P', '--no-prompt-password', help="The feed's password read from the arguments")
+    parser.add_argument('-e', '--no-empty', action='store_true', help="Don't output anything if there are no messages available")
     args = parser.parse_args()
 
     password = None
@@ -56,7 +58,12 @@ def _main():
     elif args.no_prompt_password:
         password = args.no_prompt_password
 
-    print fetch_data(args.glid[0], args.type, args.format, password)
+    data = fetch_data(args.glid[0], args.type, args.format, password)
+    if args.no_empty and data.find("No Messages to display") < 0:
+        return
+
+    print(data)
+
 
 if __name__ == '__main__':
     _main()

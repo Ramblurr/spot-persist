@@ -16,8 +16,8 @@ There are two utilites in this package:
 ```
 $ spot-fetch -h
 usage: spot-fetch [-h] [-t {message,latest}] [-f {json,xml}] [-p]
-                     [-P NO_PROMPT_PASSWORD]
-                     glid
+                  [-P NO_PROMPT_PASSWORD] [-e]
+                  glid
 
 Utility for fetching SPOT message feeds
 
@@ -34,6 +34,8 @@ optional arguments:
   -p, --password        Prompts for the feed's password interactively
   -P NO_PROMPT_PASSWORD, --no-prompt-password NO_PROMPT_PASSWORD
                         The feed's password read from the arguments
+  -e, --no-empty        Don't output anything if there are no messages
+                        available
 ```
 
 ### spot-persist
