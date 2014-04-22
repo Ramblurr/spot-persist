@@ -59,7 +59,7 @@ def _main():
         password = args.no_prompt_password
 
     data = fetch_data(args.glid[0], args.type, args.format, password)
-    if args.no_empty and data.find("No Messages to display") < 0:
+    if args.no_empty and data.find("No Messages to display") > 0:
         return
 
     print(data)
