@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-    name='spot-persist',
-    version='0.1.0',
+    name='spotpersist',
+    version='0.1.1',
     author='Casey Link',
     author_email='unnamedrambler@gmail.com',
     packages=['spotpersist'],
